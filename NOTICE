@@ -1,0 +1,28 @@
+Physiological Networks TDS is an implementation of the Time Delay Stability algorithm.
+
+The implementation follows the description of the following publication: 
+
+"Bashan, A.; Bartsch, R. P.; Kantelhardt, J. W.; Havlin, S. & Ivanov, P. C. 
+Network physiology reveals relations between network topology
+and physiological function Nature Communications, 2012, 3, 702"
+
+The Software is developed at CBMI (HTW Berlin - University of Applied Sciences)
+
+Copyright (C) 2017 Dagmar Krefting
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+Author E-Mail: Dagmar.Krefting@htw-berlin.de
+Affiliation: https://cbmi.htw-berlin.de/
+Git Repository: https://github.com/somnonetz/physiological-networks-tds
