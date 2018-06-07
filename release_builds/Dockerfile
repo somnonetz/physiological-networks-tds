@@ -24,6 +24,7 @@ ENV PYTHONPATH="/home/cc/.local/lib/python3.5/site-packages/"
 RUN pip3 install --no-input --user red-connector-xnat
 
 ## own application from repository
-ADD --chown=cc:cc ./bin/linux/x86_64/R2015a/run_sn_TDS.sh /home/cc/.local/bin/run_sn_TDS.sh
-ADD --chown=cc:cc ./bin/linux/x86_64/R2015a/sn_TDS /home/cc/.local/bin/sn_TDS
+RUN curl -sSL https://github.com/somnonetz/physiological-networks-tds/releases/download/1.0.0/run_sn_TDS.sh > /home/cc/.local/bin/run_sn_TDS.sh
+RUN curl -sSL https://github.com/somnonetz/physiological-networks-tds/releases/download/1.0.0/sn_TDS > /home/cc/.local/bin/sn_TDS
+
 
