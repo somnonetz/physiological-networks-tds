@@ -1,32 +1,56 @@
 function [header,signalHeader,signalCell] = sn_edfScan2matScan(varargin)
-% reads edf in matlab struct, based on blockEdfLoad
-%-----------------------------------------------------------
-% Dagmar Krefting, 3.12.2015, dagmar.krefting@htw-berlin.de
-% Version: 1.1
-% Credits: Based on blockEdfLoad by Dennis Dean (2012)
-% Dennis A. Dean, II, Ph.D
+%reads edf in matlab struct, based on blockEdfLoad. it corrects only for
+%edf incompatibility, not for edf+. 
 %
-% Program for Sleep and Cardiovascular Medicine
-% Brigam and Women's Hospital
-% Harvard Medical School
-% 221 Longwood Ave
-% Boston, MA  02149
-%-----------------------------------------------------------
+% cli:
+%   cwlVersion: v1.0-extended
+%   class: matlabfunction
+%   baseCommand: [events,extrema] = sn_edfScan2matScan(varargin)
 %
-%USAGE: [header,signalheader,signalcell] = sn_edfScan2matScan('data',filename, varargin)
-
-% INPUT:
-%'data'             name and full path of original edf-file
-%                   Default: not set
-%OPTIONAL INPUT:
+%   inputs:
+%     data:
+%       type: file
+%       inputBinding:
+%         prefix: data
+%       doc: "name and full path of original edf-file"
+%     debug:  
+%       type: int?
+%       inputBinding:
+%         prefix: debug
+%       doc: "if set to 1 debug information is provided. Default 0"
 %
-%'debug'            Debug flag, Default: 0
+%   outputs:
+%     header:
+%       type: matlab-struct
+%       doc: "A structure containing variables for each header entry"
+%     signalHeader:
+%       type: matlab-struct-array
+%       doc: "A struc-array containing edf signal headers"
+%     signalCell:
+%       type: matlab-cell-array
+%       doc: "A cell array that contains the data for each signal"
 %
-% OUTPUT:
-%          header : A structure containing variables for each header entry
-%    signalHeader : A structured array containing signal information,
-%                   for each structure present in the data
-%      signalCell : A cell array that contains the data for each signal
+%   s:author:
+%     - class: s:Person
+%       s:identifier:  https://orcid.org/0000-0002-7238-5339
+%       s:email: mailto:dagmar.krefting@htw-berlin.de
+%       s:name: Dagmar Krefting
+% 
+%   s:dateCreated: "2019-01-12"
+%   s:license: https://spdx.org/licenses/Apache-2.0 
+% 
+%   s:keywords: edam:topic_3063, edam:topic_2082
+%     doc: 3063: medical informatics, 2082: matrix
+%   s:programmingLanguage: matlab
+%   s:isBasedOn: https://github.com/DennisDean/BlockEdfLoad
+% 
+%   $namespaces:
+%     s: https://schema.org/
+%     edam: http://edamontology.org/
+% 
+%   $schemas:
+%     - https://schema.org/docs/schema_org_rdfa.html
+%     - http://edamontology.org/EDAM_1.18.owl
 %
 % Output Structures:
 %    header:
@@ -54,7 +78,29 @@ function [header,signalHeader,signalCell] = sn_edfScan2matScan(varargin)
 %
 %MODIFICATION LIST:
 %------------------------------------------------------------
-%% Defaults
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 0. Parse Inputs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% required input
+myinput.data = NaN;
+% dimension to be averaged
+myinput.debug = 0;
+
+try
+    myinput = mt_parameterparser('myinputstruct',myinput,'varargins',varargin);
+catch ME
+    disp(ME)
+    return
+end
+
+if (myinput.debug)
+    myinput
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 1. Define Parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Defaults from original blockEdfLoad not be set here
 % Operation Flags
@@ -62,44 +108,23 @@ RETURN_PHYSICAL_VALUES = 1;
 signalLabels = {};      % Labels of signals to return
 epochs = [];            % Start and end epoch to return
 
-% debuginformation
-debug = false;
-
-%% Get optional parameters
-
-%size of varargin
-m = size(varargin,2);
-
-%if varargin present, check for keywords and get parameter
-if m > 0
-    %disp(varargin);
-    for i = 1:2:m-1
-        %outputfile
-        if strcmp(varargin{i},'data')
-            filename = varargin{i+1};
-            %header
-        elseif strcmp(varargin{i},'debug')
-            debug = varargin{i+1};
-        end
-    end
-end
 
 %% Start function
-if debug
+if (myinput.debug)
     disp('Welcome to sn_edfScan2matScan')
 end
 
 %% Part from blockEdLoad
 %-------------------------------------------------------------- Input check
 % Check that first argument is a string
-if   ~ischar(filename)
+if   ~ischar(myinput.data)
     msg = ('Filename is not set or not a string.');
     error(msg);
 end
 
 %---------------------------------------------------  Load File Information
 % Load edf header to memory
-[fid, msg] = fopen(filename);
+[fid, msg] = fopen(myinput.data);
 
 % Proceed if file is valid
 if fid <0
@@ -110,7 +135,7 @@ end
 % Open file for reading
 % Load file information not used in this version but will be used in
 % class version
-[filename, permission, machineformat, encoding] = fopen(fid);
+[myinput.data, permission, machineformat, encoding] = fopen(fid);
 
 %-------------------------------------------------------------- Load Header
 try
@@ -147,17 +172,26 @@ for h = 1:length(headerVariables)
     header = setfield(header, headerVariables{h}, value);
 end
 
-if debug
+if (myinput.debug)
     header
 end
 % End Header Load section
+
+%% check for errors in header
+
+% occured errors:
+% siesta-data: starttime separator is colon, not dot
+if ~isempty(strfind(header.recording_starttime,':'));
+    disp('Correcting separator of starttime')
+    header.recording_starttime = strrep(header.recording_starttime,':','.');
+end
 
 %------------------------------------------------------- Load Signal Header
 try
     % Load signal header into memory in one load
     edfSignalHeaderSize = header.num_header_bytes - headerSize;
     [A count] = fread(fid, edfSignalHeaderSize);
-    if debug
+    if (myinput.debug)
         whos A
     end
 catch exception
@@ -179,11 +213,11 @@ signalHeaderVarConvF = {...
     @strtrim };
 %number of Variables in Header - should be 10
 num_signal_header_vars = length(signalHeaderVar);
-if debug
+if (myinput.debug)
     disp(['num_signal_header_vars : ',num2str(num_signal_header_vars)])
 end
 num_signals = header.num_signals;
-if debug
+if (myinput.debug)
     disp(['num_signals : ',num2str(num_signals)])
 end
 signalHeaderVarSize = [16; 80; 8; 8; 8; 8; 8; 80; 8; 32];
@@ -214,7 +248,7 @@ for v = 1:num_signal_header_vars
     end
 end
 % End Signal Load Section
-if debug
+if (myinput.debug)
     signalHeader
 end
 
@@ -227,7 +261,7 @@ try
     % Load entire file
     [A count] = fread(fid, 'int16');
     %whos A
-    if debug
+    if (myinput.debug)
         disp(['Total number of values: ' num2str(count)])
     end
     
@@ -238,16 +272,16 @@ end
 %------------------------------------------------- Process Signal Block
 % Get values to reshape block
 num_data_records = header.num_data_records;
-if debug
+if (myinput.debug)
     disp(['Number of data records : ',num2str(num_data_records)])
 end
 getSignalSamplesF = @(x)signalHeader(x).samples_in_record;
 signalSamplesPerRecord = arrayfun(getSignalSamplesF,[1:num_signals]);
-if debug
+if (myinput.debug)
     disp(['signalSamplesPerRecord : ',num2str(signalSamplesPerRecord)])
 end
 recordWidth = sum(signalSamplesPerRecord);
-if debug
+if (myinput.debug)
     disp(['Recordwidth : ',num2str(recordWidth)])
 end
 %whos A
@@ -299,7 +333,7 @@ for s = 1:num_signals
         value = value.*double(phy_max-phy_min)+phy_min;
     else
         fprintf('Digital to Physical conversion is NOT performned: %s\n',...
-            filename);
+            data);
     end
     
     signalCell{s} = value;
