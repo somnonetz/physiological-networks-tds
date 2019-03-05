@@ -23,8 +23,10 @@ function [T] = pn_tds_biosignalscsv_hypnogram(varargin)
 %         prefix: hypnogram
 %       doc: "the corresponding hypnogram in edf-format"
 %   outputs:
-%     table.csv:
-%       type: file
+%     table:
+%       type: File
+%       outputBinding: 
+%         glob: *.csv
 %       doc: "A csv extended by the number of epoch and the sleep stage"
 %
 %   s:author:
