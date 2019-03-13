@@ -27,6 +27,11 @@ function [column_names] = pn_tds_biosignals2csv(varargin)
 %       inputBinding:
 %         prefix: headers
 %       doc: "A matlab-archive containing the header and signal header of original EDF"
+%     biosignalorder:
+%       type: textfile?
+%       inputBinding:
+%         prefix: biosignalorder
+%       doc: "A textfile containing the order of the channels"
 %   outputs:
 %     table.csv:
 %       type: file
@@ -63,7 +68,7 @@ function [column_names] = pn_tds_biosignals2csv(varargin)
 
 %% required input
 myinput.data = NaN;
-myinput.eegbands = [{'delta';'theta';'alpha';'sigma';'beta'}];
+myinput.eegbands = {'delta';'theta';'alpha';'sigma';'beta'};
 myinput.debug = 0;
 
 try
@@ -98,12 +103,25 @@ if isfield(myinput,'headers')
     d.signalheader = signalheader;
 end
 
+%define biosignalorder
+biosignalorder = (1:length(d.montage));
+
+% overwrite biosignalorder if present as parameter
+if isfield(myinput,'biosignalorder')
+    fid = fopen(myinput.biosignalorder);
+    m_tmp = textscan(fid,'%d');
+    biosignalorder = m_tmp{1};
+    fclose(fid);
+end
+
+if myinput.debug; biosignalorder ;end
 
 % create cell array for the column names
 column_names = cell(1);
 
 %loop over montage
-for i = 1:length(d.montage)
+for k = 1:length(biosignalorder)
+    i = biosignalorder(k);
     switch d.montage{i}
         case 'eeg'
             %% add frequency bands
@@ -126,7 +144,7 @@ for i = 1:length(d.montage)
 end
 
 %remove first element, as ist was the initializing empty cell
-column_names(1) = []
+column_names(1) = [];
 
 % replace colon by minus
 column_names = regexprep(column_names,':','_')
