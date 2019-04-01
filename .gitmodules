@@ -1,0 +1,6 @@
+[submodule "externals/psgScan2edfData"]
+	path = externals/psgScan2edfData
+	url = git://github.com/somnonetz/psgScan2edfData.git
+[submodule "externals/matlab-tools"]
+	path = externals/matlab-tools
+	url = git://github.com/somnonetz/matlab-tools.git
